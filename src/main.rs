@@ -1,1 +1,1 @@
-fn main() {panic!()}
+fn main() {}
