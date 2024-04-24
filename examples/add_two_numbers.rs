@@ -1,6 +1,6 @@
 /// You are given two **non-empty** linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list. <br>
 /// You may assume the two numbers do not contain any leading zero, except the number 0 itself.
-/// <br> <br> 
+/// <br> <br>
 /// Example 1: <br>
 /// <img src="https://assets.leetcode.com/uploads/2020/10/02/addtwonumber1.jpg">
 /// <br>
@@ -11,20 +11,20 @@
 /// ```
 /// <br>
 /// Example 2:
-/// 
+///
 /// ```
 /// Input: l1 = [0], l2 = [0]
 /// Output: [0]
 /// ```
 /// <br>
 /// Example 3:
-/// 
+///
 /// ```
 /// Input: l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]
 /// Output: [8,9,9,9,0,0,0,1]
 /// ```
 /// <br>
-/// 
+///
 /// Constraints:
 /// - The number of nodes in each linked list is in the range [1, 100].
 /// - 0 <= list_node.val <= 9
@@ -35,8 +35,8 @@ fn main() {}
 // Definition for singly-linked list.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct ListNode {
-  pub val: usize,
-  pub next: Option<Box<ListNode>>
+    pub val: usize,
+    pub next: Option<Box<ListNode>>,
 }
 
 pub struct NodeIter(Option<Box<ListNode>>);
@@ -60,20 +60,12 @@ fn list_into_iter(val: Box<ListNode>) -> impl Iterator<Item = Box<ListNode>> {
     NodeIter(Some(val))
 }
 fn list_from_iter<I: IntoIterator<Item = usize>>(iter: I) -> Box<ListNode> {
-    let mut head = ListNode {
-        val: 0,
-        next: None,
-    };
+    let mut head = ListNode { val: 0, next: None };
 
     let mut current = &mut head;
 
     for val in iter {
-        let new = Some(Box::new(
-            ListNode {
-                val,
-                next: None,
-            }
-        ));
+        let new = Some(Box::new(ListNode { val, next: None }));
         current.next = new;
         current = current.next.as_mut().expect("current.next is some");
     }
@@ -123,22 +115,20 @@ fn add(l1: Option<Box<ListNode>>, l2: Option<Box<ListNode>>) -> Option<Box<ListN
             };
             carry = 1;
 
-            i+= 1;
+            i += 1;
         } else {
             match sum.get_mut(i) {
                 Some(sum_i) => *sum_i = digit_sum,
                 None if digit_sum != 0 => sum.push(digit_sum),
                 _ => break,
             };
-            
-            i+= 1;
+
+            i += 1;
         }
     }
 
     Some(list_from_iter(sum.into_iter()))
 }
-
-
 
 #[cfg(test)]
 pub mod test {
@@ -150,30 +140,21 @@ pub mod test {
             val: 2,
             next: Some(Box::new(ListNode {
                 val: 4,
-                next: Some(Box::new(ListNode {
-                    val: 3,
-                    next: None,
-                })),
+                next: Some(Box::new(ListNode { val: 3, next: None })),
             })),
         }));
         let rhs = Some(Box::new(ListNode {
             val: 5,
             next: Some(Box::new(ListNode {
                 val: 6,
-                next: Some(Box::new(ListNode {
-                    val: 4,
-                    next: None,
-                })),
+                next: Some(Box::new(ListNode { val: 4, next: None })),
             })),
         }));
         let expected_sum = Some(Box::new(ListNode {
             val: 7,
             next: Some(Box::new(ListNode {
                 val: 0,
-                next: Some(Box::new(ListNode {
-                    val: 8,
-                    next: None,
-                })),
+                next: Some(Box::new(ListNode { val: 8, next: None })),
             })),
         }));
         let sum = add(lhs, rhs);
@@ -181,18 +162,9 @@ pub mod test {
     }
     #[test]
     pub fn case2() {
-        let lhs = Some(Box::new(ListNode {
-            val: 0,
-            next: None,
-        }));
-        let rhs = Some(Box::new(ListNode {
-            val: 0,
-            next: None,
-        }));
-        let expected_sum = Some(Box::new(ListNode {
-            val: 0,
-            next: None,
-        }));
+        let lhs = Some(Box::new(ListNode { val: 0, next: None }));
+        let rhs = Some(Box::new(ListNode { val: 0, next: None }));
+        let expected_sum = Some(Box::new(ListNode { val: 0, next: None }));
         let sum = add(lhs, rhs);
         assert_eq!(sum, expected_sum);
     }
@@ -210,10 +182,7 @@ pub mod test {
                             val: 9,
                             next: Some(Box::new(ListNode {
                                 val: 9,
-                                next: Some(Box::new(ListNode {
-                                    val: 9,
-                                    next: None,
-                                })),
+                                next: Some(Box::new(ListNode { val: 9, next: None })),
                             })),
                         })),
                     })),
@@ -226,10 +195,7 @@ pub mod test {
                 val: 9,
                 next: Some(Box::new(ListNode {
                     val: 9,
-                    next: Some(Box::new(ListNode {
-                        val: 9,
-                        next: None,
-                    })),
+                    next: Some(Box::new(ListNode { val: 9, next: None })),
                 })),
             })),
         }));
@@ -247,10 +213,7 @@ pub mod test {
                                 val: 0,
                                 next: Some(Box::new(ListNode {
                                     val: 0,
-                                    next: Some(Box::new(ListNode {
-                                        val: 1,
-                                        next: None,
-                                    })),
+                                    next: Some(Box::new(ListNode { val: 1, next: None })),
                                 })),
                             })),
                         })),
