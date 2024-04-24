@@ -30,7 +30,7 @@
 /// ```
 fn main() {
     let s = "aabcdeefgh";
-    length_of_longest_substring_without_repeats(s);
+    length_of_longest_substring_without_repeats_combinators(s);
 }
 
 fn no_repeated_chars(s: &str) -> bool {
@@ -51,8 +51,25 @@ fn no_repeated_chars(s: &str) -> bool {
     true
 }
 
+fn all_sub_sequences(s: &str) -> impl Iterator<Item = &str> {
+    s.char_indices()
+        .map(move |(end, _)| {
+            s.char_indices()
+                .filter_map(move |(start, _)| s.get(start..=end))
+        })
+        .flatten()
+}
+
+fn length_of_longest_substring_without_repeats_combinators(s: &str) -> usize {
+    return all_sub_sequences(s)
+        .filter(|sub_str| !sub_str.is_empty() && no_repeated_chars(sub_str))
+        .max_by_key(|sub_str| sub_str.len())
+        .unwrap_or_default()
+        .len();
+}
+
 fn length_of_longest_substring_without_repeats(s: &str) -> usize {
-    let mut max_length = 0;
+    let mut longest = "";
 
     for end in 0..s.len() {
         for start in 0..s.len() {
@@ -64,9 +81,9 @@ fn length_of_longest_substring_without_repeats(s: &str) -> usize {
 
                 if no_repeated_chars(sub_str) {
                     print!("no repeats; ");
-                    if sub_str.len() > max_length {
-                        max_length = sub_str.len();
-                        println!("new longest {};", max_length);
+                    if sub_str.len() > longest.len() {
+                        longest = sub_str;
+                        println!("new longest {};", longest.len());
                         break;
                     }
                     println!();
@@ -78,7 +95,7 @@ fn length_of_longest_substring_without_repeats(s: &str) -> usize {
         println!()
     }
 
-    return max_length;
+    return longest.len();
 }
 
 #[cfg(test)]
