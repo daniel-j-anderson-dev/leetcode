@@ -37,49 +37,16 @@
 /// ## Constraints:
 /// - 1 <= n <= 109
 pub fn minimum_boxes(n: usize) -> usize {
-    let mut box_count = n;
-
     // true means there is a box at that spot
     // outer most collection is height
     let mut storage_room = vec![vec![vec![false; n]; n]; n];
 
-    'up_down: for i in (0..n).cycle() {
-        let is_wall_below = i == 0;
-        let is_wall_above = i == n - 1;
-
-        'left_right: for j in (0..n).cycle() {
-            let is_wall_left = j == 0;
-            let is_wall_right = j == n - 1;
-
-            'forward_backward: for k in (0..n).cycle() {
-                let is_wall_behind = k == 0;
-                let is_wall_infront = k == n - 1;
-                
-                let is_box_below = !is_wall_below && storage_room[i - 1][j][k];
-                let is_box_left = !is_wall_left && storage_room[i][j - 1][k];
-                let is_box_right = !is_wall_right && storage_room[i][j + 1][k];
-                let is_box_behind = !is_wall_behind && storage_room[i][j][k - 1];
-                let is_box_infront = !is_wall_infront && storage_room[i][j][k + 1];
-
-                if is_box_below && (is_box_left || is_wall_left) && (is_box_right || is_box_right) && (is_box_behind || is_wall_behind) && (is_box_infront || is_wall_infront) {
-                    // place box at (i, j, k)
-                    storage_room[i][j][k] = true;
-                    box_count -= 1;
-                } else if is_wall_below && is_wall_left && is_wall_behind && !storage_room[i][j][k] {
-                    storage_room[i][j][k] = true;
-                    box_count -= 1;
-                } else if is_wall_below {
-                    storage_room[i][j][k] = true;
-                    box_count -= 1;
-                } else {}
-
-                if box_count == 0 {
-                    break 'up_down;
-                }
-            }
-        }
+    for _ in 0..n {
+        let valid_positions = valid_positions(&storage_room);
+        let (i,j,k) = find_best_position(valid_positions).expect("there are valid positions");
+        storage_room[i][j][k] = true;
     }
-
+   
     let mut floor_box_count = 0;
     for j in 0..n {
         for k in 0..n {
@@ -103,23 +70,122 @@ pub fn minimum_boxes(n: usize) -> usize {
     return floor_box_count;
 }
 
-#[test]
-fn all_cases() {
-    case1();
-    case2();
-    case3();
+fn find_best_position(indexes: impl Iterator<Item = (usize, usize, usize)>) -> Option<(usize, usize, usize)> {
+    indexes.fold(None, |current_best, item| match current_best {
+        None => Some(item),
+        Some(best) => {
+            let item_avg = (item.1 + item.2) as f64 / 2.0;
+            let best_avg = (best.1 + best.2) as f64 / 2.0;
+            if (item.0 > best.0) || 
+               (item.0 == best.0 && item_avg < best_avg) {
+                Some(item)
+            } else {
+                Some(best)
+            }
+        }
+    })
 }
-#[test]
-fn case1() {
-    assert_eq!(3, minimum_boxes(3));    
+
+/// Returns an iterator yielding each valid spot's index
+fn valid_positions(
+    storage_room: &Vec<Vec<Vec<bool>>>,
+) -> impl Iterator<Item = (usize, usize, usize)> {
+    let mut valid_positions = Vec::new();
+
+    let n = storage_room.len();
+
+    'vertical: for i in 0..n {
+        let is_wall_below = i == 0;
+        let is_wall_above = i == n - 1;
+
+        'lateral: for j in 0..n {
+            let is_wall_left = j == 0;
+            let is_wall_right = j == n - 1;
+
+            'bilateral: for k in 0..n {
+                let is_wall_behind = k == 0;
+                let is_wall_infront = k == n - 1;
+
+                // is current position occupied?
+                if storage_room[i][j][k] {
+                    continue 'bilateral;
+                }
+
+                // is the current position supported by the floor?
+                if is_wall_below {
+                    valid_positions.push((i, j, k));
+                    continue 'bilateral;   
+                }
+
+                // is the current position supported by another box below the current position?
+                if storage_room[i - 1][j][k] {
+
+                    // is the box below supported on all four sides?
+                    if (is_wall_left || storage_room[i - 1][j - 1][k])
+                        && (is_wall_right || storage_room[i - 1][j + 1][k])
+                        && (is_wall_behind || storage_room[i - 1][j][k - 1])
+                        && (is_wall_infront || storage_room[i - 1][j][k + 1])
+                    {
+                        valid_positions.push((i, j, k));
+                        continue 'bilateral;
+                    }
+                }
+            }
+        }
+    }
+
+    return valid_positions.into_iter();
 }
-#[test]
-fn case2() {
-    assert_eq!(3, minimum_boxes(4));
-}
-#[test]
-fn case3() {
-    assert_eq!(6, minimum_boxes(10));
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_valid_positions() {
+        let sr1 = vec![
+            vec![ // level 0 Floor
+                vec![true, true, false], // front
+                vec![true, false, false],
+                vec![false, false, false] // back
+            ],
+            vec![ // level 1
+                vec![false, false, false], // front
+                vec![false, false, false],
+                vec![false, false, false] // back
+            ],
+            vec![ // level 2 Ceiling
+                vec![false, false, false], // front
+                vec![false, false, false],
+                vec![false, false, false] // back
+            ],
+        ];
+
+        let expected_valid_sr1 = &[
+            (0,0,2),
+            (0,1,1),
+            (0,1,2),
+            (0,2,0),
+            (0,2,1),
+            (0,2,2),
+            (1,0,0),
+        ];
+
+        let valid_sr1 = valid_positions(&sr1).collect::<Vec<_>>();
+
+        assert_eq!(valid_sr1.as_slice(), expected_valid_sr1);
+    }
+    #[test]
+    fn case1() {
+        assert_eq!(3, minimum_boxes(3));
+    }
+    #[test]
+    fn case2() {
+        assert_eq!(3, minimum_boxes(4));
+    }
+    #[test]
+    fn case3() {
+        assert_eq!(6, minimum_boxes(10));
+    }
 }
 
 fn main() {}
