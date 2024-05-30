@@ -71,14 +71,14 @@ pub fn minimum_boxes(n: usize) -> usize {
 }
 
 fn find_best_position(indexes: impl Iterator<Item = (usize, usize, usize)>) -> Option<(usize, usize, usize)> {
-    indexes.fold(None, |current_best, item| match current_best {
-        None => Some(item),
+    indexes.fold(None, |best, current| match best {
+        None => Some(current),
         Some(best) => {
-            let item_avg = (item.1 + item.2) as f64 / 2.0;
+            let item_avg = (current.1 + current.2) as f64 / 2.0;
             let best_avg = (best.1 + best.2) as f64 / 2.0;
-            if (item.0 > best.0) || 
-               (item.0 == best.0 && item_avg < best_avg) {
-                Some(item)
+            if (current.0 > best.0) || 
+               (current.0 == best.0 && item_avg < best_avg) {
+                Some(current)
             } else {
                 Some(best)
             }
