@@ -69,33 +69,25 @@ fn length_of_longest_substring_without_repeats_combinators(s: &str) -> usize {
 }
 
 fn length_of_longest_substring_without_repeats(s: &str) -> usize {
-    let mut longest = "";
+    use std::collections::HashMap;
 
-    for end in 0..s.len() {
-        for start in 0..s.len() {
-            print!("({}..={}): ", start, end);
-            if let Some(sub_str) = s.get(start..=end) {
-                if !sub_str.is_empty() {
-                    print!("{}; ", sub_str);
-                }
+    let mut length = 0;
+    let mut character_index_map = HashMap::<char, usize>::new();
 
-                if no_repeated_chars(sub_str) {
-                    print!("no repeats; ");
-                    if sub_str.len() > longest.len() {
-                        longest = sub_str;
-                        println!("new longest {};", longest.len());
-                        break;
-                    }
-                    println!();
-                    break;
-                }
-            }
-            println!()
-        }
-        println!()
+    let mut chars = s.chars().enumerate();
+    while let Some((index, character)) = chars.next() {
+        let (index, character) = if character_index_map.contains_key(&character) {
+            length = length.max(character_index_map.len());
+            character_index_map.clear();
+            chars.next().unwrap_or((index, character))
+        } else {
+            (index, character)
+        };
+
+        character_index_map.insert(character, index);
     }
 
-    return longest.len();
+    return length;
 }
 
 #[cfg(test)]
