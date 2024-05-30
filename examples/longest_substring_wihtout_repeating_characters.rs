@@ -68,13 +68,9 @@ fn length_of_longest_substring_without_repeats_combinators(s: &str) -> usize {
         .len();
 }
 
-<<<<<<< HEAD
-fn length_of_longest_substring_without_repeats(s: &str) -> usize {
-    use std::collections::HashMap;
-=======
 fn length_of_longest_substring_without_repeats_loops(s: &str) -> usize {
+    use std::collections::HashMap;
     let mut longest = "";
->>>>>>> 45ce9195d3a0f04c9d8b7afbb12f2d21ffc6f42d
 
     let mut length = 0;
     let mut character_index_map = HashMap::<char, usize>::new();
