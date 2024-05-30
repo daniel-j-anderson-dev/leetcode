@@ -43,10 +43,10 @@ pub fn minimum_boxes(n: usize) -> usize {
 
     for _ in 0..n {
         let valid_positions = valid_positions(&storage_room);
-        let (i,j,k) = find_best_position(valid_positions).expect("there are valid positions");
+        let (i, j, k) = find_best_position(valid_positions).expect("there are valid positions");
         storage_room[i][j][k] = true;
     }
-   
+
     let mut floor_box_count = 0;
     for j in 0..n {
         for k in 0..n {
@@ -70,14 +70,15 @@ pub fn minimum_boxes(n: usize) -> usize {
     return floor_box_count;
 }
 
-fn find_best_position(indexes: impl Iterator<Item = (usize, usize, usize)>) -> Option<(usize, usize, usize)> {
+fn find_best_position(
+    indexes: impl Iterator<Item = (usize, usize, usize)>,
+) -> Option<(usize, usize, usize)> {
     indexes.fold(None, |best, current| match best {
         None => Some(current),
         Some(best) => {
             let item_avg = (current.1 + current.2) as f64 / 2.0;
             let best_avg = (best.1 + best.2) as f64 / 2.0;
-            if (current.0 > best.0) || 
-               (current.0 == best.0 && item_avg < best_avg) {
+            if (current.0 > best.0) || (current.0 == best.0 && item_avg < best_avg) {
                 Some(current)
             } else {
                 Some(best)
@@ -114,12 +115,11 @@ fn valid_positions(
                 // is the current position supported by the floor?
                 if is_wall_below {
                     valid_positions.push((i, j, k));
-                    continue 'bilateral;   
+                    continue 'bilateral;
                 }
 
                 // is the current position supported by another box below the current position?
                 if storage_room[i - 1][j][k] {
-
                     // is the box below supported on all four sides?
                     if (is_wall_left || storage_room[i - 1][j - 1][k])
                         && (is_wall_right || storage_room[i - 1][j + 1][k])
@@ -143,31 +143,34 @@ mod test {
     #[test]
     fn test_valid_positions() {
         let sr1 = vec![
-            vec![ // level 0 Floor
+            vec![
+                // level 0 Floor
                 vec![true, true, false], // front
                 vec![true, false, false],
-                vec![false, false, false] // back
+                vec![false, false, false], // back
             ],
-            vec![ // level 1
+            vec![
+                // level 1
                 vec![false, false, false], // front
                 vec![false, false, false],
-                vec![false, false, false] // back
+                vec![false, false, false], // back
             ],
-            vec![ // level 2 Ceiling
+            vec![
+                // level 2 Ceiling
                 vec![false, false, false], // front
                 vec![false, false, false],
-                vec![false, false, false] // back
+                vec![false, false, false], // back
             ],
         ];
 
         let expected_valid_sr1 = &[
-            (0,0,2),
-            (0,1,1),
-            (0,1,2),
-            (0,2,0),
-            (0,2,1),
-            (0,2,2),
-            (1,0,0),
+            (0, 0, 2),
+            (0, 1, 1),
+            (0, 1, 2),
+            (0, 2, 0),
+            (0, 2, 1),
+            (0, 2, 2),
+            (1, 0, 0),
         ];
 
         let valid_sr1 = valid_positions(&sr1).collect::<Vec<_>>();
