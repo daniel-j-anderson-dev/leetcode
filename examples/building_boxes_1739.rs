@@ -93,43 +93,40 @@ fn valid_positions(
 ) -> impl Iterator<Item = (usize, usize, usize)> {
     let mut valid_positions = Vec::new();
 
-    let n = storage_room.len();
+    const N: usize = 3;
 
-    'vertical: for i in 0..n {
+    for (i, j, k) in
+        (0..N).flat_map(move |i| (0..N).flat_map(move |j| (0..N).map(move |k| (i, j, k))))
+    {
+        // where are the walls?
         let is_wall_below = i == 0;
-        let is_wall_above = i == n - 1;
+        let is_wall_above = i == N - 1;
+        let is_wall_left = j == 0;
+        let is_wall_right = j == N - 1;
+        let is_wall_behind = k == 0;
+        let is_wall_infront = k == N - 1;
 
-        'lateral: for j in 0..n {
-            let is_wall_left = j == 0;
-            let is_wall_right = j == n - 1;
+        // is current position occupied?
+        if storage_room[i][j][k] {
+            continue;
+        }
 
-            'bilateral: for k in 0..n {
-                let is_wall_behind = k == 0;
-                let is_wall_infront = k == n - 1;
+        // is the current position supported by the floor?
+        if is_wall_below {
+            valid_positions.push((i, j, k));
+            continue;
+        }
 
-                // is current position occupied?
-                if storage_room[i][j][k] {
-                    continue 'bilateral;
-                }
-
-                // is the current position supported by the floor?
-                if is_wall_below {
-                    valid_positions.push((i, j, k));
-                    continue 'bilateral;
-                }
-
-                // is the current position supported by another box below the current position?
-                if storage_room[i - 1][j][k] {
-                    // is the box below supported on all four sides?
-                    if (is_wall_left || storage_room[i - 1][j - 1][k])
-                        && (is_wall_right || storage_room[i - 1][j + 1][k])
-                        && (is_wall_behind || storage_room[i - 1][j][k - 1])
-                        && (is_wall_infront || storage_room[i - 1][j][k + 1])
-                    {
-                        valid_positions.push((i, j, k));
-                        continue 'bilateral;
-                    }
-                }
+        // is the current position supported by another box below the current position?
+        if storage_room[i - 1][j][k] {
+            // is the box below supported on all four sides?
+            if (is_wall_left || storage_room[i - 1][j - 1][k])
+                && (is_wall_right || storage_room[i - 1][j + 1][k])
+                && (is_wall_behind || storage_room[i - 1][j][k - 1])
+                && (is_wall_infront || storage_room[i - 1][j][k + 1])
+            {
+                valid_positions.push((i, j, k));
+                continue;
             }
         }
     }
@@ -142,7 +139,7 @@ mod test {
     use super::*;
     #[test]
     fn test_valid_positions() {
-        let sr1 = vec![
+        let storage_room_1 = vec![
             vec![
                 // level 0 Floor
                 vec![true, true, false], // front
@@ -162,8 +159,28 @@ mod test {
                 vec![false, false, false], // back
             ],
         ];
+        let storage_room_2 = vec![
+            vec![
+                // level 0 Floor
+                vec![true, true, true], // front
+                vec![true, true, false],
+                vec![true, false, false],
+            ],
+            vec![
+                // level 1
+                vec![true, true, false], // front
+                vec![true, false, false],
+                vec![false, false, false],
+            ],
+            vec![
+                // level 2 Ceiling
+                vec![false, false, false], // front
+                vec![false, false, false],
+                vec![false, false, false],
+            ],
+        ];
 
-        let expected_valid_sr1 = &[
+        let expected_storage_room_1 = &[
             (0, 0, 2),
             (0, 1, 1),
             (0, 1, 2),
@@ -172,10 +189,13 @@ mod test {
             (0, 2, 2),
             (1, 0, 0),
         ];
+        let expected_storage_room_2 = &[(0, 1, 2), (0, 2, 1), (0, 2, 2), (2, 0, 0)];
 
-        let valid_sr1 = valid_positions(&sr1).collect::<Vec<_>>();
+        let valid_storage_room_1 = valid_positions(&storage_room_1).collect::<Vec<_>>();
+        let valid_storage_room_2 = valid_positions(&storage_room_2).collect::<Vec<_>>();
 
-        assert_eq!(valid_sr1.as_slice(), expected_valid_sr1);
+        assert_eq!(valid_storage_room_1, expected_storage_room_1);
+        assert_eq!(valid_storage_room_2, expected_storage_room_2);
     }
     #[test]
     fn case1() {
@@ -188,6 +208,15 @@ mod test {
     #[test]
     fn case3() {
         assert_eq!(6, minimum_boxes(10));
+    }
+    #[test]
+    fn print_all_indexes() {
+        let n = 3;
+        (0..n)
+            .flat_map(move |i| (0..n).flat_map(move |j| (0..n).map(move |k| (i, j, k))))
+            .for_each(|(i, j, k)| {
+                println!("({i}, {j}, {k}),");
+            });
     }
 }
 
