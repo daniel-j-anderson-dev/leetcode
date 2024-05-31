@@ -70,15 +70,18 @@ pub fn minimum_boxes(n: usize) -> usize {
     return floor_box_count;
 }
 
+/// This function returns the index that
+/// - has the highest value for first subindex,
+/// - and the lowest average between the other subindexes
 fn find_best_position(
     indexes: impl Iterator<Item = (usize, usize, usize)>,
 ) -> Option<(usize, usize, usize)> {
     indexes.fold(None, |best, current| match best {
         None => Some(current),
         Some(best) => {
-            let item_avg = (current.1 + current.2) as f64 / 2.0;
-            let best_avg = (best.1 + best.2) as f64 / 2.0;
-            if (current.0 > best.0) || (current.0 == best.0 && item_avg < best_avg) {
+            let item_average = (current.1 + current.2) as f64 / 2.0;
+            let best_average = (best.1 + best.2) as f64 / 2.0;
+            if (current.0 > best.0) || (current.0 == best.0 && item_average < best_average) {
                 Some(current)
             } else {
                 Some(best)
