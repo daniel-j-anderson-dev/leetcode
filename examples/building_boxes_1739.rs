@@ -130,75 +130,6 @@ fn valid_indexes<'a>(
     });
 }
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
-pub fn minimum_boxes_par(n: usize) -> usize {
-    // true means there is a box at that spot
-    // outer most collection is height
-    let mut storage_room = vec![vec![vec![false; n]; n]; n];
-
-    let mut floor_box_count = 0;
-
-    for _box_number in 1..=n {
-        let valid_indexes = valid_indexes_par(&storage_room).collect::<Vec<_>>();
-        let (i, j, k) = find_best_index(&valid_indexes).expect("There is always a valid index");
-
-        storage_room[i][j][k] = true;
-
-        if i == 0 {
-            floor_box_count += 1;
-        }
-    }
-
-    return floor_box_count;
-}
-/// Returns an iterator yielding all indexes in parallel.
-fn all_indexes_par(len: usize) -> impl ParallelIterator<Item = (usize, usize, usize)> {
-    (0..len).into_par_iter().flat_map(move |i| (0..len).into_par_iter().flat_map(move |j| (0..len).into_par_iter().map(move |k| (i, j, k))))
-}
-/// Returns an iterator yielding each valid spot's index
-fn valid_indexes_par<'a>(
-    storage_room: &'a Vec<Vec<Vec<bool>>>,
-) -> impl ParallelIterator<Item = (usize, usize, usize)> + 'a {
-    let max_index: usize = storage_room.len() - 1;
-
-    // filter out any indexes that can't support a box
-    return all_indexes_par(max_index).filter(move |&(i, j, k)| {
-        // where are the walls?
-        let is_wall_below = i == 0;
-        let is_wall_left = j == 0;
-        let is_wall_right = j == max_index;
-        let is_wall_behind = k == 0;
-        let is_wall_infront = k == max_index;
-
-        // is current index occupied?
-        if storage_room[i][j][k] {
-            return false;
-        }
-
-        // is the current index supported by the floor?
-        if is_wall_below {
-            return true;
-        }
-
-        // is the current index supported by another box below the current index?
-        if !storage_room[i - 1][j][k] {
-            return false;
-        }
-
-        // is the box below supported on all four sides?
-        if (is_wall_left || storage_room[i - 1][j - 1][k])
-            && (is_wall_right || storage_room[i - 1][j + 1][k])
-            && (is_wall_behind || storage_room[i - 1][j][k - 1])
-            && (is_wall_infront || storage_room[i - 1][j][k + 1])
-        {
-            return true;
-        }
-
-        return false;
-    });
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -224,7 +155,7 @@ mod test {
     }
     #[test]
     fn input_126_output_39_par() {
-        assert_eq!(39, minimum_boxes_par(126))
+        assert_eq!(39, parallel::minimum_boxes(126))
     }
     #[test]
     fn test_all_indexes() {
@@ -259,6 +190,78 @@ mod test {
             (2, 2, 2),
         ];
         assert_eq!(all_indexes, expected_all_indexes);
+    }
+}
+
+mod parallel {
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
+    use super::find_best_index;
+    
+    pub fn minimum_boxes(n: usize) -> usize {
+        // true means there is a box at that spot
+        // outer most collection is height
+        let mut storage_room = vec![vec![vec![false; n]; n]; n];
+
+        let mut floor_box_count = 0;
+
+        for _box_number in 1..=n {
+            let valid_indexes = valid_indexes(&storage_room).collect::<Vec<_>>();
+            let (i, j, k) = find_best_index(&valid_indexes).expect("There is always a valid index");
+
+            storage_room[i][j][k] = true;
+
+            if i == 0 {
+                floor_box_count += 1;
+            }
+        }
+
+        return floor_box_count;
+    }
+    /// Returns an iterator yielding all indexes in parallel.
+    fn all_indexes(len: usize) -> impl ParallelIterator<Item = (usize, usize, usize)> {
+        (0..len).into_par_iter().flat_map(move |i| (0..len).into_par_iter().flat_map(move |j| (0..len).into_par_iter().map(move |k| (i, j, k))))
+    }
+    /// Returns an iterator yielding each valid spot's index
+    fn valid_indexes<'a>(
+        storage_room: &'a Vec<Vec<Vec<bool>>>,
+    ) -> impl ParallelIterator<Item = (usize, usize, usize)> + 'a {
+        let max_index: usize = storage_room.len() - 1;
+
+        // filter out any indexes that can't support a box
+        return all_indexes(max_index).filter(move |&(i, j, k)| {
+            // where are the walls?
+            let is_wall_below = i == 0;
+            let is_wall_left = j == 0;
+            let is_wall_right = j == max_index;
+            let is_wall_behind = k == 0;
+            let is_wall_infront = k == max_index;
+
+            // is current index occupied?
+            if storage_room[i][j][k] {
+                return false;
+            }
+
+            // is the current index supported by the floor?
+            if is_wall_below {
+                return true;
+            }
+
+            // is the current index supported by another box below the current index?
+            if !storage_room[i - 1][j][k] {
+                return false;
+            }
+
+            // is the box below supported on all four sides?
+            if (is_wall_left || storage_room[i - 1][j - 1][k])
+                && (is_wall_right || storage_room[i - 1][j + 1][k])
+                && (is_wall_behind || storage_room[i - 1][j][k - 1])
+                && (is_wall_infront || storage_room[i - 1][j][k + 1])
+            {
+                return true;
+            }
+
+            return false;
+        });
     }
 }
 
