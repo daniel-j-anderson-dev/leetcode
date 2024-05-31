@@ -100,7 +100,6 @@ fn valid_positions(
     {
         // where are the walls?
         let is_wall_below = i == 0;
-        let is_wall_above = i == N - 1;
         let is_wall_left = j == 0;
         let is_wall_right = j == N - 1;
         let is_wall_behind = k == 0;
