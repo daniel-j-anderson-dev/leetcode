@@ -78,10 +78,10 @@ fn find_best_index(
     indexes.fold(None, |best, current| match best {
         None => Some(current),
         Some(best) => {
-            let item_average = (current.1 + current.2) as f64 / 2.0;
+            let current_average = (current.1 + current.2) as f64 / 2.0;
             let best_average = (best.1 + best.2) as f64 / 2.0;
             let best =
-                if (current.0 > best.0) || (current.0 == best.0 && item_average < best_average) {
+                if (current.0 > best.0) || (current.0 == best.0 && current_average < best_average) {
                     current
                 } else {
                     best
