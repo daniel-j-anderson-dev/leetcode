@@ -39,13 +39,14 @@
 pub fn minimum_boxes(n: usize) -> usize {
     // true means there is a box at that spot
     // outer most collection is height
-    let mut storage_room = vec![vec![vec![false; n]; n]; n];
+    let mut storage_room =
+        vec![vec![vec![false; n].into_boxed_slice(); n].into_boxed_slice(); n].into_boxed_slice();
 
     let mut floor_box_count = 0;
 
     for _box_number in 1..=n {
-        let valid_indexes = valid_indexes(&storage_room).collect::<Vec<_>>();
-        let (i, j, k) = find_best_index(&valid_indexes).expect("there is always a valid index");
+        let valid_indexes = valid_indexes(&storage_room);
+        let (i, j, k) = find_best_index(valid_indexes).expect("there is always a valid index");
         storage_room[i][j][k] = true;
 
         if i == 0 {
@@ -61,21 +62,21 @@ pub fn minimum_boxes(n: usize) -> usize {
 /// - and the lowest average between the other subindexes
 /// - Returns [None] if `indexes` is empty
 fn find_best_index(
-    indexes: &[(usize, usize, usize)],
+    indexes: impl Iterator<Item = (usize, usize, usize)>,
 ) -> Option<(usize, usize, usize)> {
-    indexes.iter().cloned().fold(None, |best, current| match best {
+    indexes.fold(None, |best, current| match best {
         None => Some(current),
         Some(best) => {
             let current_average = (current.1 + current.2) as f64 / 2.0;
             let best_average = (best.1 + best.2) as f64 / 2.0;
 
-            let best =
-                if (current.0 > best.0) || (current.0 == best.0 && current_average < best_average) {
-                    current
-                } else {
-                    best
-                };
-
+            let best = if (current.0 > best.0)
+                || (current.0 == best.0 && current_average < best_average)
+            {
+                current
+            } else {
+                best
+            };
 
             Some(best)
         }
@@ -89,7 +90,7 @@ fn all_indexes(len: usize) -> impl Iterator<Item = (usize, usize, usize)> {
 
 /// Returns an iterator yielding each valid spot's index
 fn valid_indexes<'a>(
-    storage_room: &'a Vec<Vec<Vec<bool>>>,
+    storage_room: &'a Box<[Box<[Box<[bool]>]>]>,
 ) -> impl Iterator<Item = (usize, usize, usize)> + 'a {
     let max_index: usize = storage_room.len() - 1;
 
@@ -195,8 +196,7 @@ mod test {
 
 mod parallel {
     use rayon::iter::{IntoParallelIterator, ParallelIterator};
-    use super::find_best_index;
-    
+
     pub fn minimum_boxes(n: usize) -> usize {
         // true means there is a box at that spot
         // outer most collection is height
@@ -205,8 +205,8 @@ mod parallel {
         let mut floor_box_count = 0;
 
         for _box_number in 1..=n {
-            let valid_indexes = valid_indexes(&storage_room).collect::<Vec<_>>();
-            let (i, j, k) = find_best_index(&valid_indexes).expect("There is always a valid index");
+            let valid_indexes = valid_indexes(&storage_room);
+            let (i, j, k) = find_best_index(valid_indexes).expect("There is always a valid index");
 
             storage_room[i][j][k] = true;
 
@@ -219,7 +219,11 @@ mod parallel {
     }
     /// Returns an iterator yielding all indexes in parallel.
     fn all_indexes(len: usize) -> impl ParallelIterator<Item = (usize, usize, usize)> {
-        (0..len).into_par_iter().flat_map(move |i| (0..len).into_par_iter().flat_map(move |j| (0..len).into_par_iter().map(move |k| (i, j, k))))
+        (0..len).into_par_iter().flat_map(move |i| {
+            (0..len)
+                .into_par_iter()
+                .flat_map(move |j| (0..len).into_par_iter().map(move |k| (i, j, k)))
+        })
     }
     /// Returns an iterator yielding each valid spot's index
     fn valid_indexes<'a>(
@@ -262,6 +266,28 @@ mod parallel {
 
             return false;
         });
+    }
+    /// This function returns the index that
+    /// - has the highest value for first subindex,
+    /// - and the lowest average between the other subindexes
+    /// - Returns [None] if `indexes` is empty
+    fn find_best_index(
+        indexes: impl ParallelIterator<Item = (usize, usize, usize)>,
+    ) -> Option<(usize, usize, usize)> {
+        indexes.reduce_with(|best, current| {
+            let current_average = (current.1 + current.2) as f64 / 2.0;
+            let best_average = (best.1 + best.2) as f64 / 2.0;
+
+            let best = if (current.0 > best.0)
+                || (current.0 == best.0 && current_average < best_average)
+            {
+                current
+            } else {
+                best
+            };
+
+            best
+        })
     }
 }
 
