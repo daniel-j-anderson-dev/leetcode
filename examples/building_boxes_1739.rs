@@ -72,6 +72,7 @@ pub fn minimum_boxes(n: usize) -> usize {
 /// This function returns the index that
 /// - has the highest value for first subindex,
 /// - and the lowest average between the other subindexes
+/// - Returns [None] if `indexes` is empty
 fn find_best_index(
     indexes: impl Iterator<Item = (usize, usize, usize)>,
 ) -> Option<(usize, usize, usize)> {
@@ -80,6 +81,7 @@ fn find_best_index(
         Some(best) => {
             let current_average = (current.1 + current.2) as f64 / 2.0;
             let best_average = (best.1 + best.2) as f64 / 2.0;
+
             let best =
                 if (current.0 > best.0) || (current.0 == best.0 && current_average < best_average) {
                     current
