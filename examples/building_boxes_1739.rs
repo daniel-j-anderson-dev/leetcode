@@ -156,7 +156,7 @@ pub fn minimum_boxes_par(n: usize) -> usize {
     let mut floor_box_count = 0;
 
     for _box_number in 1..=n {
-        let valid_indexes = valid_indexes(&storage_room).collect::<Vec<_>>();
+        let valid_indexes = valid_indexes_par(&storage_room).collect::<Vec<_>>();
         let (i, j, k) = find_best_index(&valid_indexes).expect("there is always a valid index");
         storage_room[i][j][k] = true;
 
