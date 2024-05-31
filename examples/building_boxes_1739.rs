@@ -44,8 +44,13 @@ pub fn minimum_boxes(n: usize) -> usize {
     let mut floor_box_count = 0;
 
     for _box_number in 1..=n {
+        let collect_valid_indexes_time = std::time::Instant::now();
         let valid_indexes = valid_indexes(&storage_room).collect::<Vec<_>>();
+        dbg!(collect_valid_indexes_time.elapsed());
+        
+        let find_best_index_time = std::time::Instant::now();
         let (i, j, k) = find_best_index(&valid_indexes).expect("there is always a valid index");
+        dbg!(find_best_index_time.elapsed());
         storage_room[i][j][k] = true;
 
         // println!("Box #{} placed at ({}, {}, {})\n", _box_number, i, j, k);
@@ -101,8 +106,6 @@ fn all_indexes(len: usize) -> impl Iterator<Item = (usize, usize, usize)> {
     (0..len).flat_map(move |i| (0..len).flat_map(move |j| (0..len).map(move |k| (i, j, k))))
 }
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
 /// Returns an iterator yielding each valid spot's index
 fn valid_indexes<'a>(
     storage_room: &'a Vec<Vec<Vec<bool>>>,
@@ -148,6 +151,8 @@ fn valid_indexes<'a>(
     });
 }
 
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 pub fn minimum_boxes_par(n: usize) -> usize {
     // true means there is a box at that spot
     // outer most collection is height
@@ -156,8 +161,14 @@ pub fn minimum_boxes_par(n: usize) -> usize {
     let mut floor_box_count = 0;
 
     for _box_number in 1..=n {
+        let collect_valid_indexes_time = std::time::Instant::now();
         let valid_indexes = valid_indexes_par(&storage_room).collect::<Vec<_>>();
-        let (i, j, k) = find_best_index(&valid_indexes).expect("there is always a valid index");
+        dbg!(collect_valid_indexes_time.elapsed());
+
+        let find_best_index_time = std::time::Instant::now();
+        let (i, j, k) = find_best_index(&valid_indexes).expect("There is always a valid index");
+        dbg!(find_best_index_time.elapsed());
+
         storage_room[i][j][k] = true;
 
         // println!("Box #{} placed at ({}, {}, {})\n", _box_number, i, j, k);
