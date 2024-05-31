@@ -43,13 +43,16 @@ pub fn minimum_boxes(n: usize) -> usize {
 
     let mut floor_box_count = 0;
 
-    for _ in 0..n {
-        let valid_positions = valid_indexes(&storage_room);
-        let (i, j, k) = find_best_index(valid_positions).expect("there are valid positions");
+    for _box_number in 1..=n {
+        let valid_indexes = valid_indexes(&storage_room);
+        let (i, j, k) = find_best_index(valid_indexes).expect("there is always a valid index");
+        storage_room[i][j][k] = true;
+
+        // println!("Box #{} placed at ({}, {}, {})\n", _box_number, i, j, k);
+
         if i == 0 {
             floor_box_count += 1;
         }
-        storage_room[i][j][k] = true;
     }
 
     // for i in 0..3 {
@@ -77,11 +80,15 @@ fn find_best_index(
         Some(best) => {
             let item_average = (current.1 + current.2) as f64 / 2.0;
             let best_average = (best.1 + best.2) as f64 / 2.0;
-            if (current.0 > best.0) || (current.0 == best.0 && item_average < best_average) {
-                Some(current)
+            let best = if (current.0 > best.0) || (current.0 == best.0 && item_average < best_average) {
+                current
             } else {
-                Some(best)
-            }
+                best
+            };
+
+            // println!("current best: level {}, j_k_avg: {}", best.0, (best.1 + best.2) / 2);
+
+            Some(best)
         }
     })
 }
@@ -106,17 +113,18 @@ fn valid_indexes<'a>(
         let is_wall_behind = k == 0;
         let is_wall_infront = k == MAX_INDEX;
 
-        // is current position occupied?
+        // is current index occupied?
         if storage_room[i][j][k] {
             return false;
         }
 
-        // is the current position supported by the floor?
+        // is the current index supported by the floor?
         if is_wall_below {
+            // println!("({}, {}, {}) is supported by the floor", i, j, k);
             return true;
         }
 
-        // is the current position supported by another box below the current position?
+        // is the current index supported by another box below the current index?
         if !storage_room[i - 1][j][k] {
             return false;
         }
@@ -127,6 +135,7 @@ fn valid_indexes<'a>(
             && (is_wall_behind || storage_room[i - 1][j][k - 1])
             && (is_wall_infront || storage_room[i - 1][j][k + 1])
         {
+            // println!("({}, {}, {}) is supported by the box below", i, j, k);
             return true;
         }
 
@@ -138,7 +147,7 @@ fn valid_indexes<'a>(
 mod test {
     use super::*;
     #[test]
-    fn test_valid_positions() {
+    fn test_valid_indexes() {
         let storage_room_1 = vec![
             vec![
                 // level 0 Floor
