@@ -44,32 +44,14 @@ pub fn minimum_boxes(n: usize) -> usize {
     let mut floor_box_count = 0;
 
     for _box_number in 1..=n {
-        let collect_valid_indexes_time = std::time::Instant::now();
         let valid_indexes = valid_indexes(&storage_room).collect::<Vec<_>>();
-        dbg!(collect_valid_indexes_time.elapsed());
-        
-        let find_best_index_time = std::time::Instant::now();
         let (i, j, k) = find_best_index(&valid_indexes).expect("there is always a valid index");
-        dbg!(find_best_index_time.elapsed());
         storage_room[i][j][k] = true;
-
-        // println!("Box #{} placed at ({}, {}, {})\n", _box_number, i, j, k);
 
         if i == 0 {
             floor_box_count += 1;
         }
     }
-
-    // for i in 0..3 {
-    //     println!("level {}", i);
-    //     for j in 0..3 {
-    //         for k in 0..3 {
-    //             print!("{:>5}, ", storage_room[i][j][k]);
-    //         }
-    //         println!()
-    //     }
-    //     println!()
-    // }
 
     return floor_box_count;
 }
@@ -94,7 +76,6 @@ fn find_best_index(
                     best
                 };
 
-            // println!("current best: level {}, j_k_avg: {}", best.0, (best.1 + best.2) / 2);
 
             Some(best)
         }
@@ -128,7 +109,6 @@ fn valid_indexes<'a>(
 
         // is the current index supported by the floor?
         if is_wall_below {
-            // println!("({}, {}, {}) is supported by the floor", i, j, k);
             return true;
         }
 
@@ -143,7 +123,6 @@ fn valid_indexes<'a>(
             && (is_wall_behind || storage_room[i - 1][j][k - 1])
             && (is_wall_infront || storage_room[i - 1][j][k + 1])
         {
-            // println!("({}, {}, {}) is supported by the box below", i, j, k);
             return true;
         }
 
@@ -161,33 +140,15 @@ pub fn minimum_boxes_par(n: usize) -> usize {
     let mut floor_box_count = 0;
 
     for _box_number in 1..=n {
-        let collect_valid_indexes_time = std::time::Instant::now();
         let valid_indexes = valid_indexes_par(&storage_room).collect::<Vec<_>>();
-        dbg!(collect_valid_indexes_time.elapsed());
-
-        let find_best_index_time = std::time::Instant::now();
         let (i, j, k) = find_best_index(&valid_indexes).expect("There is always a valid index");
-        dbg!(find_best_index_time.elapsed());
 
         storage_room[i][j][k] = true;
-
-        // println!("Box #{} placed at ({}, {}, {})\n", _box_number, i, j, k);
 
         if i == 0 {
             floor_box_count += 1;
         }
     }
-
-    // for i in 0..3 {
-    //     println!("level {}", i);
-    //     for j in 0..3 {
-    //         for k in 0..3 {
-    //             print!("{:>5}, ", storage_room[i][j][k]);
-    //         }
-    //         println!()
-    //     }
-    //     println!()
-    // }
 
     return floor_box_count;
 }
@@ -217,7 +178,6 @@ fn valid_indexes_par<'a>(
 
         // is the current index supported by the floor?
         if is_wall_below {
-            // println!("({}, {}, {}) is supported by the floor", i, j, k);
             return true;
         }
 
@@ -232,7 +192,6 @@ fn valid_indexes_par<'a>(
             && (is_wall_behind || storage_room[i - 1][j][k - 1])
             && (is_wall_infront || storage_room[i - 1][j][k + 1])
         {
-            // println!("({}, {}, {}) is supported by the box below", i, j, k);
             return true;
         }
 
