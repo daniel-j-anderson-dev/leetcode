@@ -41,31 +41,27 @@ pub fn minimum_boxes(n: usize) -> usize {
     // outer most collection is height
     let mut storage_room = vec![vec![vec![false; n]; n]; n];
 
+    let mut floor_box_count = 0;
+
     for _ in 0..n {
-        let valid_positions = valid_positions(&storage_room);
-        let (i, j, k) = find_best_position(valid_positions).expect("there are valid positions");
+        let valid_positions = valid_indexes(&storage_room);
+        let (i, j, k) = find_best_index(valid_positions).expect("there are valid positions");
+        if i == 0 {
+            floor_box_count += 1;
+        }
         storage_room[i][j][k] = true;
     }
 
-    let mut floor_box_count = 0;
-    for j in 0..n {
-        for k in 0..n {
-            if storage_room[0][j][k] {
-                floor_box_count += 1;
-            }
-        }
-    }
-
-    for i in 0..n {
-        println!("row {}", i);
-        for j in 0..n {
-            for k in 0..n {
-                print!("{} ", storage_room[i][j][k]);
-            }
-            println!();
-        }
-        println!();
-    }
+    // for i in 0..3 {
+    //     println!("level {}", i);
+    //     for j in 0..3 {
+    //         for k in 0..3 {
+    //             print!("{:>5}, ", storage_room[i][j][k]);
+    //         }
+    //         println!()
+    //     }
+    //     println!()
+    // }
 
     return floor_box_count;
 }
@@ -73,7 +69,7 @@ pub fn minimum_boxes(n: usize) -> usize {
 /// This function returns the index that
 /// - has the highest value for first subindex,
 /// - and the lowest average between the other subindexes
-fn find_best_position(
+fn find_best_index(
     indexes: impl Iterator<Item = (usize, usize, usize)>,
 ) -> Option<(usize, usize, usize)> {
     indexes.fold(None, |best, current| match best {
@@ -90,50 +86,52 @@ fn find_best_position(
     })
 }
 
+/// Returns an iterator yielding all indexes.
+fn all_indexes() -> impl Iterator<Item = (usize, usize, usize)> {
+    (0..3).flat_map(move |i| (0..3).flat_map(move |j| (0..3).map(move |k| (i, j, k))))
+}
+
 /// Returns an iterator yielding each valid spot's index
-fn valid_positions(
-    storage_room: &Vec<Vec<Vec<bool>>>,
-) -> impl Iterator<Item = (usize, usize, usize)> {
-    let mut valid_positions = Vec::new();
+fn valid_indexes<'a>(
+    storage_room: &'a Vec<Vec<Vec<bool>>>,
+) -> impl Iterator<Item = (usize, usize, usize)> + 'a {
+    const MAX_INDEX: usize = 2;
 
-    const N: usize = 3;
-
-    for (i, j, k) in
-        (0..N).flat_map(move |i| (0..N).flat_map(move |j| (0..N).map(move |k| (i, j, k))))
-    {
+    // filter out any indexes that can't support a box
+    return all_indexes().filter(move |&(i, j, k)| {
         // where are the walls?
         let is_wall_below = i == 0;
         let is_wall_left = j == 0;
-        let is_wall_right = j == N - 1;
+        let is_wall_right = j == MAX_INDEX;
         let is_wall_behind = k == 0;
-        let is_wall_infront = k == N - 1;
+        let is_wall_infront = k == MAX_INDEX;
 
         // is current position occupied?
         if storage_room[i][j][k] {
-            continue;
+            return false;
         }
 
         // is the current position supported by the floor?
         if is_wall_below {
-            valid_positions.push((i, j, k));
-            continue;
+            return true;
         }
 
         // is the current position supported by another box below the current position?
-        if storage_room[i - 1][j][k] {
-            // is the box below supported on all four sides?
-            if (is_wall_left || storage_room[i - 1][j - 1][k])
-                && (is_wall_right || storage_room[i - 1][j + 1][k])
-                && (is_wall_behind || storage_room[i - 1][j][k - 1])
-                && (is_wall_infront || storage_room[i - 1][j][k + 1])
-            {
-                valid_positions.push((i, j, k));
-                continue;
-            }
+        if !storage_room[i - 1][j][k] {
+            return false;
         }
-    }
 
-    return valid_positions.into_iter();
+        // is the box below supported on all four sides?
+        if (is_wall_left || storage_room[i - 1][j - 1][k])
+            && (is_wall_right || storage_room[i - 1][j + 1][k])
+            && (is_wall_behind || storage_room[i - 1][j][k - 1])
+            && (is_wall_infront || storage_room[i - 1][j][k + 1])
+        {
+            return true;
+        }
+
+        return false;
+    });
 }
 
 #[cfg(test)]
@@ -160,7 +158,7 @@ mod test {
                 vec![false, false, false],
                 vec![false, false, false], // back
             ],
-        ];
+        ]; // 3 boxes
         let storage_room_2 = vec![
             vec![
                 // level 0 Floor
@@ -180,9 +178,29 @@ mod test {
                 vec![false, false, false],
                 vec![false, false, false],
             ],
-        ];
+        ]; // 9 boxes
+        let storage_room_3 = vec![
+            vec![
+                // level 0 Floor
+                vec![true, true, true], // front
+                vec![true, true, true],
+                vec![true, true, true], // back
+            ],
+            vec![
+                // level 1
+                vec![true, true, true], // front
+                vec![true, true, false],
+                vec![true, false, false], // back
+            ],
+            vec![
+                // level 2 Ceiling
+                vec![false, false, false], // front
+                vec![false, false, false],
+                vec![false, false, false], // back
+            ],
+        ]; // 15 boxes
 
-        let expected_storage_room_1 = &[
+        let expected_valid_storage_room_1 = &[
             (0, 0, 2),
             (0, 1, 1),
             (0, 1, 2),
@@ -191,34 +209,73 @@ mod test {
             (0, 2, 2),
             (1, 0, 0),
         ];
-        let expected_storage_room_2 = &[(0, 1, 2), (0, 2, 1), (0, 2, 2), (2, 0, 0)];
+        let expected_valid_storage_room_2 = &[(0, 1, 2), (0, 2, 1), (0, 2, 2), (2, 0, 0)];
+        let expected_valid_storage_room_3 = &[
+            (1, 1, 2),
+            (1, 2, 1),
+            (1, 2, 2),
+            (2, 0, 0),
+            (2, 0, 1),
+            (2, 1, 0),
+        ];
 
-        let valid_storage_room_1 = valid_positions(&storage_room_1).collect::<Vec<_>>();
-        let valid_storage_room_2 = valid_positions(&storage_room_2).collect::<Vec<_>>();
+        let valid_storage_room_1 = valid_indexes(&storage_room_1).collect::<Vec<_>>();
+        let valid_storage_room_2 = valid_indexes(&storage_room_2).collect::<Vec<_>>();
+        let valid_storage_room_3 = valid_indexes(&storage_room_3).collect::<Vec<_>>();
 
-        assert_eq!(valid_storage_room_1, expected_storage_room_1);
-        assert_eq!(valid_storage_room_2, expected_storage_room_2);
+        assert_eq!(valid_storage_room_1, expected_valid_storage_room_1);
+        assert_eq!(valid_storage_room_2, expected_valid_storage_room_2);
+        assert_eq!(valid_storage_room_3, expected_valid_storage_room_3);
     }
     #[test]
-    fn case1() {
+    fn input_3_output_3() {
         assert_eq!(3, minimum_boxes(3));
     }
     #[test]
-    fn case2() {
+    fn input_4_output_3() {
         assert_eq!(3, minimum_boxes(4));
     }
     #[test]
-    fn case3() {
+    fn input_10_output_6() {
         assert_eq!(6, minimum_boxes(10));
     }
     #[test]
-    fn print_all_indexes() {
-        let n = 3;
-        (0..n)
-            .flat_map(move |i| (0..n).flat_map(move |j| (0..n).map(move |k| (i, j, k))))
-            .for_each(|(i, j, k)| {
-                println!("({i}, {j}, {k}),");
-            });
+    fn input_15_output_9() {
+        assert_eq!(9, minimum_boxes(15));
+    }
+    #[test]
+    fn test_all_indexes() {
+        let all_indexes = all_indexes().collect::<Vec<_>>();
+        let expected_all_indexes = &[
+            (0, 0, 0),
+            (0, 0, 1),
+            (0, 0, 2),
+            (0, 1, 0),
+            (0, 1, 1),
+            (0, 1, 2),
+            (0, 2, 0),
+            (0, 2, 1),
+            (0, 2, 2),
+            (1, 0, 0),
+            (1, 0, 1),
+            (1, 0, 2),
+            (1, 1, 0),
+            (1, 1, 1),
+            (1, 1, 2),
+            (1, 2, 0),
+            (1, 2, 1),
+            (1, 2, 2),
+            (2, 0, 0),
+            (2, 0, 1),
+            (2, 0, 2),
+            (2, 1, 0),
+            (2, 1, 1),
+            (2, 1, 2),
+            (2, 2, 0),
+            (2, 2, 1),
+            (2, 2, 2),
+        ];
+        assert_eq!(all_indexes, expected_all_indexes);
     }
 }
 
